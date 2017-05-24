@@ -10,71 +10,130 @@ The Project
 The goals / steps of this project are the following:
 
 * Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector. 
-* Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
+* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector.  
 * Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
-* Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
+* Run the pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
 * Estimate a bounding box for vehicles detected.
 
-Here are links to the labeled data for [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) examples to train your classifier.  These example images come from a combination of the [GTI vehicle image database](http://www.gti.ssr.upm.es/data/Vehicle_database.html), the [KITTI vision benchmark suite](http://www.cvlibs.net/datasets/kitti/), and examples extracted from the project video itself.   You are welcome and encouraged to take advantage of the recently released [Udacity labeled dataset](https://github.com/udacity/self-driving-car/tree/master/annotations) to augment your training data.  
+[//]: # (Image References)
 
-#### Define feature params
-color_space = 'RGB' 
-orient = 6  
-pix_per_cell = 8 
-cell_per_block = 2 # HOG cells per block
-hog_channel = 0 # Can be 0, 1, 2, or "ALL"
-spatial_size = (16, 16) # Spatial binning dimensions
-hist_bins = 16    # Number of histogram bins
-spatial_feat = True # Spatial features on or off
-hist_feat = True # Histogram features on or off
-hog_feat = True # HOG features on or off
+[image1]: ./output_images/car_image.JPG "car"
+[image2]: ./output_images/noncar_image.JPG "non car"
+[image3]: ./output_images/hog_ch_3.JPG "HOG"
+[image4]: ./output_images/detection.JPG "detections"
+[image5]: ./output_images/false_positives.JPG "false pos"
 
-5.01 Seconds to compute features...
-Using: 6 orientations 8 pixels per cell and 2 cells per block
-Feature vector length: 1992
-1.84 Seconds to train SVC...
-Test Accuracy of SVC =  0.945
 
-2.
-color_space = 'HSV' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
-orient = 6  # HOG orientations
-pix_per_cell = 8 # HOG pixels per cell
-cell_per_block = 2 # HOG cells per block
-hog_channel = 0 # Can be 0, 1, 2, or "ALL"
-spatial_size = (16, 16) # Spatial binning dimensions
-hist_bins = 16    # Number of histogram bins
-spatial_feat = True # Spatial features on or off
-hist_feat = True # Histogram features on or off
-hog_feat = True # HOG features on or off
+#### Preparation for the project
 
-4.7 Seconds to compute features...
-Using: 6 orientations 8 pixels per cell and 2 cells per block
-Feature vector length: 1992
-2.06 Seconds to train SVC...
-Test Accuracy of SVC =  0.98
+I started with reading in images from the links to the labeled data for [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) examples to train my classifier.  These example images come from a combination of the [GTI vehicle image database](http://www.gti.ssr.upm.es/data/Vehicle_database.html), the [KITTI vision benchmark suite](http://www.cvlibs.net/datasets/kitti/), and examples extracted from the project video itself. 
 
-15. color_space = 'YUV' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+An example of car(vehicle) and non-car(non-vehicle) image is shown below
+
+![alt text][image1] ![alt text][image2]
+
+This is done in cell 1 of the iPython notebook and we get the following distribution between car and non-car images:
+
+**No.of car images: 8792**
+
+**No.of non car images: 8968**
+
+
+#### Feature Extraction
+Next step in the process was to perform Histogram of Oriented Gradients (HOG) feature extraction on the labeled training set of images retrieved in the above section. Along with the HOG features, I also used binned color features and histogram of colors to and created a combined feature vector using **extract\_features()** function. These are defined in cell 3 of the iPython notebook.
+
+Here is an example of running HOG feature extraction over a car and a non car image.
+
+![alt text][image3]
+
+#### SVM Classifier
+
+The classifier that I used for training on the sample images is an Support Vector Machines (SVM) classifier. This is done in cell 5 of the notebook.
+
+After a few trials on the right parameters and finding out the training accuracy of my SVM classifier to be around 98.87% I reached at the parameter values as shown below.
+
+color\_space = 'YUV' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+
 orient = 9  # HOG orientations
-pix_per_cell = 8 # HOG pixels per cell
-cell_per_block = 2 # HOG cells per block
-hog_channel = 'ALL' # Can be 0, 1, 2, or "ALL"
-spatial_size = (16, 16) # Spatial binning dimensions
-hist_bins = 16    # Number of histogram bins
-spatial_feat = True # Spatial features on or off
-hist_feat = True # Histogram features on or off
-hog_feat = True # HOG features on or off
 
-75.11 Seconds to compute features...
-Using: 9 orientations 8 pixels per cell and 2 cells per block
-Feature vector length: 6588
-17.65 Seconds to train SVC...
-Test Accuracy of SVC =  0.9916
+pix\_per\_cell = 8 # HOG pixels per cell
+
+cell\_per_\block = 2 # HOG cells per block
+
+hog\_channel = 0 # Can be 0, 1, 2, or "ALL"
+
+spatial\_size = (32, 32) # Spatial binning dimensions
+
+hist\_bins = 32    # Number of histogram bins
+
+spatial\_feat = True # Spatial features on or off
+
+hist\_feat = True # Histogram features on or off
+
+hog\_feat = True # HOG features on or off
+
+y\_start\_stop = [None, None] # Min and max in y to search in slide\_window()
 
 
+#### Sliding Window
+Also included in cell 3 is the **sliding\_window()** function which takes in an image, start and stop positions of the window, size of the window and overlap as parameters. This function creates a list of window positions based on the parameters that were passed. This list will be useful in the next functions.
 
-Some example images for testing your pipeline on single frames are located in the `test_images` folder.  To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `ouput_images`, and include them in your writeup for the project by describing what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
+#### Search Windows
+This function also in cell 3, takes the list of window positions and the image along with parameters required for extracting features. It uses this information and for each window, it passes the window of size 64X64 pixels to a function called **single\_image\_features()** which extracts features for that window.
 
-**As an optional challenge** Once you have a working pipeline for vehicle detection, add in your lane-finding algorithm from the last project to do simultaneous lane-finding and vehicle detection!
+These features are then passed through the trained SVM classifier which outputs if it is a car or a non-car image. All the windows positively detected for cars are then appended and returned as a list from the function.
 
-**If you're feeling ambitious** (also totally optional though), don't stop there!  We encourage you to go out and take video of your own, and show us how you would implement this project on a new video!
+#### Checking detection of vehicles in test images using the trained SVM classifier
+
+Cell 7 of the notebook verifies if the above functions are working on some sample images and detecting vehicles or not. An example of all windows running on 2 sample images show detection and non detections.
+
+![alt text][image4]
+
+#### Heat Maps & False Positives
+
+During the detection, I also encountered a lot of false positive detections of cars. This resulted in boxes being drawn at non-car locations. In order to reduce false positives, I created a heat map which increases heat on a blank image in areas where there are overlapping windows for positive detections. This will help in reducing false positives by applying a threshold on the values of the heat map images. The thresholded heatmap was then used in drawing boxes that lead to more robust detection of cars VS false positive cars.
+
+An example of heatmap implementation on sample images is shown in cell 8. Shown below is an example of a false positive detection and its corresponding heat map which is darker than true positives. The idea of heat map thresholding is to threshold these darker areas and remove false positive detections.
+
+![alt text][image5]
+
+#### Classes for averaging and smoothing frame-to-frame drawing boxes
+
+While running the above pipeline on the project video, one would notice jumping boxes since my pipeline would detect vertices of heat map drawn boxes jump frame-to-frame. This led me to define classes that would save heatmap history and also box vertices history. These classes are defined in cell 9.
+
+Also defined in cell 9 are functions that help improve the smoothing of boxes along with the above classes. In order to improve smoothing, my 1st method includes averaging the heat map over certain frames of images, in my case which is 3 frames. The 2nd method of improving smoothing is by averaging the vertices of boxes detected by **draw\_labeled\_bboxes\_1()** function. This function utilises the **Vehicle()** class to accumulate history of vertices over frames. This function is in cell 9 as well. 
+
+These include an **add\_heat()** function that adds heat to an image, **remove\_heat()** removes heat when detection of heat maps crosses a threshold of certain number of frames.
+
+#### Find Cars function
+
+This function in cell 10 bundels a lot of above mentioned function into one. This function carries out cropping of unnecessary areas along y axis. Also I am cropping a portion of the left sides of the frames since I noticed there were false positives due to the lanes on the left side opposite lanes. This scheme obviously needs to be automated in an actual system, which kicks in when it detects if the car is driving in the left most lane and is off otherwise.
+
+**find\_cars()** function then applies appropriate color transformation on cropped frames, extracts features and uses the classifier to detect if there are cars in the windows over the image frames. The function then returns a list of boxes that can be used in the main pipeline for video.
+
+#### PIPELINE
+
+Cell 11 contains the main pipeline that works on generating the **results\_video.mp4** file. The pipeline has the following steps:
+
+1. Get a list of boxes for the frame passed to it
+
+2. If boxes are detected in the frame then add heat to those areas of detection
+
+3. Since the pipeline is utilizing the **heat\_it\_up()** class it looks for averaging the heat map over 3 frames in my case.
+
+4. After averaging heat map over certain number of frames, it then applies a threshold on the heat map to reduce false positives.
+
+5. Then apply label [function](https://docs.scipy.org/doc/scipy-0.16.0/reference/generated/scipy.ndimage.measurements.label.html) from scipy library which finds out the areas of connected pixels and labels them as return parameters. Which means roughly it tells us the number of cars detected and thier locations in the image frame
+
+6. Then lastly the **draw\_labeled\_bboxes\_1()** function draws boxes on the image frame
+
+#### Final Results
+
+Cell 12 applies the pipeline over all the image frames for the **project\_video.mp4** file. The results are located in this same repository as **results\_video.mp4** and with this YouTube [link](https://youtu.be/O-GPZk4yWsk)
+
+#### Improvements and Future Work
+
+1. Although my boxes detection is not jumping but due to flickering I think I can still improve the averaging functions and therefor improve the smoothness of my boxes highlighting detection.
+
+2. Also the pipeline handles false positives in shadow areas noticeably well. However, when the car transitions to a different color road like the bridge in the video, it fails to detect the vehicle in those frames. I think learnings from previous project on using color spaces well can improve this area too.
+
